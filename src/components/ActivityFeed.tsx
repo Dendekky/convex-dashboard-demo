@@ -22,35 +22,53 @@ export default function ActivityFeed() {
           Live Activity
         </span>
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-1">
-        {activities.map((activity) => (
-          <div
-            key={activity._id}
-            className="flex items-center gap-2 bg-slate-700/50 rounded-full px-3 py-1.5 flex-shrink-0"
-          >
+      <div className="flex gap-3 overflow-x-auto pb-1">
+        {activities.map((activity) => {
+          const initials = getInitials(activity.userName);
+          return (
             <div
-              className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
-              style={{ backgroundColor: activity.userColor }}
+              key={activity._id}
+              className="flex items-center gap-2 bg-slate-700/50 rounded-lg px-3 py-2 flex-shrink-0 max-w-md"
             >
-              {activity.userName.charAt(0).toUpperCase()}
-            </div>
-            <span className="text-sm text-slate-300">
-              <span className="font-medium" style={{ color: activity.userColor }}>
-                {activity.userName}
-              </span>{" "}
-              {activity.action} on{" "}
-              <span className="text-slate-200 font-medium">
-                {activity.widgetTitle}
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                style={{ backgroundColor: activity.userColor }}
+              >
+                {initials}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span
+                  className="text-sm font-semibold truncate"
+                  style={{ color: activity.userColor }}
+                >
+                  {activity.userName}
+                </span>
+                <span className="text-xs text-slate-400">
+                  {activity.action} on{" "}
+                  <span className="text-slate-300 font-medium">
+                    {activity.widgetTitle}
+                  </span>
+                </span>
+              </div>
+              <span className="text-xs text-slate-500 flex-shrink-0 ml-2">
+                {formatTime(activity.timestamp)}
               </span>
-            </span>
-            <span className="text-xs text-slate-500">
-              {formatTime(activity.timestamp)}
-            </span>
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
+}
+
+function getInitials(name: string): string {
+  // Handle "Adjective Creature from Location" format
+  const parts = name.split(" ");
+  if (parts.length >= 2) {
+    // Get first letter of first two words (the dramatic name part)
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return name.charAt(0).toUpperCase();
 }
 
 function formatTime(timestamp: number): string {
