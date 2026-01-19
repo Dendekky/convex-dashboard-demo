@@ -16,13 +16,62 @@ export const updateWidget = mutation({
     title: v.optional(v.string()),
     color: v.optional(v.string()),
     visible: v.optional(v.boolean()),
+    userName: v.string(),
+    userColor: v.string(),
   },
   handler: async (ctx, args) => {
-    const { id, ...updates } = args;
+    const { id, userName, userColor, ...updates } = args;
     const filteredUpdates = Object.fromEntries(
       Object.entries(updates).filter(([_, value]) => value !== undefined)
     );
+
+    // Get the widget to know its title
+    const widget = await ctx.db.get(id);
+    if (!widget) return;
+
+    // Determine what changed for the activity log
+    let action = "";
+    if (updates.type !== undefined) {
+      action = `changed chart type to ${updates.type}`;
+    } else if (updates.title !== undefined) {
+      action = `renamed widget to "${updates.title}"`;
+    } else if (updates.color !== undefined) {
+      action = `changed color`;
+    } else if (updates.visible !== undefined) {
+      action = updates.visible ? "showed widget" : "hid widget";
+    }
+
+    // Update the widget
     await ctx.db.patch(id, filteredUpdates);
+
+    // Log the activity
+    if (action) {
+      await ctx.db.insert("activity", {
+        userName,
+        userColor,
+        action,
+        widgetTitle: updates.title ?? widget.title,
+        timestamp: Date.now(),
+      });
+
+      // Keep only the last 20 activities
+      const activities = await ctx.db.query("activity").collect();
+      if (activities.length > 20) {
+        const sorted = activities.sort((a, b) => a.timestamp - b.timestamp);
+        const toDelete = sorted.slice(0, activities.length - 20);
+        for (const activity of toDelete) {
+          await ctx.db.delete(activity._id);
+        }
+      }
+    }
+  },
+});
+
+export const getActivity = query({
+  args: {},
+  handler: async (ctx) => {
+    const activities = await ctx.db.query("activity").collect();
+    return activities.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
   },
 });
 

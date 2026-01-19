@@ -4,6 +4,8 @@ import { api } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
 import Dashboard from "./components/Dashboard";
 import Sidebar from "./components/Sidebar";
+import ActivityFeed from "./components/ActivityFeed";
+import { useUserIdentity } from "./hooks/useUserIdentity";
 
 export type WidgetData = {
   _id: Id<"widgets">;
@@ -20,12 +22,18 @@ function App() {
   const seedWidgets = useMutation(api.widgets.seedWidgets);
   const updateWidget = useMutation(api.widgets.updateWidget);
   const [selectedWidgetId, setSelectedWidgetId] = useState<Id<"widgets"> | null>(null);
+  const user = useUserIdentity();
 
   const selectedWidget = widgets?.find((w) => w._id === selectedWidgetId) || null;
 
   const handleUpdateWidget = (updates: Partial<Omit<WidgetData, "_id" | "position" | "data">>) => {
-    if (selectedWidgetId) {
-      updateWidget({ id: selectedWidgetId, ...updates });
+    if (selectedWidgetId && user.name) {
+      updateWidget({
+        id: selectedWidgetId,
+        userName: user.name,
+        userColor: user.color,
+        ...updates,
+      });
     }
   };
 
@@ -61,6 +69,17 @@ function App() {
             Realtime Dashboard Demo
           </h1>
           <div className="flex items-center gap-4">
+            {user.name && (
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                  style={{ backgroundColor: user.color }}
+                >
+                  {user.name.charAt(0)}
+                </div>
+                <span className="text-sm text-slate-300">{user.name}</span>
+              </div>
+            )}
             <span className="text-sm text-slate-400">
               Powered by Convex
             </span>
@@ -89,6 +108,8 @@ function App() {
           />
         </main>
       </div>
+
+      <ActivityFeed />
     </div>
   );
 }

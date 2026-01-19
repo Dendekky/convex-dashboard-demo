@@ -15,4 +15,11 @@ export default defineSchema({
       })
     ),
   }),
+  activity: defineTable({
+    userName: v.string(),
+    userColor: v.string(),
+    action: v.string(),
+    widgetTitle: v.string(),
+    timestamp: v.number(),
+  }),
 });
